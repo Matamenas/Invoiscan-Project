@@ -1,0 +1,44 @@
+
+OCR.Space API Key:
+K89068375888957
+
+iOS bundle identifier:
+com.matamenas.Invoiscan
+---------------------------------------------------------------------------
+
+Tools for expo:
+https://docs.expo.dev/develop/tools/
+
+---------------------------------------------------------------------------
+
+To start server:
+npx expo start
+
+---------------------------------------------------------------------------
+BASIC APP USING NEXT.JS BASED ON REACT:
+https://docs.google.com/document/d/e/2PACX-1vSFFSE57E-RLXfH5cPIlTDLdZ_RW7m-gpuxQ3poohNHJ-TI5tMXJO6hSgerp1oSDoaFCIa2zG5QBvXo/pub
+
+---------------------------------------------------------------------------
+
+THINGS THAT NEED TO BE DONE (Deliverables):
+Deliverable 1: System prototype documentation
+Deliverable 2: Working Prototype & Demonstration
+Deliverable 3: Project Diary Part 1
+Deliverable 4: Oral Presentation and Defense of Project
+Deliverable 5: Project Software
+Deliverable 6: Project Report
+
+FOR MORE DETAILS GO HERE:
+https://brightspace.tudublin.ie/d2l/le/content/360369/viewContent/2951342/View
+
+---------------------------------------------------------------------------
+
+website where to build an app:
+median.co
+
+where to host:
+Vercel.com
+
+---------------------------------------------------------------------------
+Side Notes on functionality:
+Vat is to be calculated as a seperate field. how much VAT was put on to the total?cs
