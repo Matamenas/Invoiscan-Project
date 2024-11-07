@@ -81,7 +81,7 @@
       const extractedText = data.fullText;
 
       // Identify Date using regex
-      const dateRegex = /\b(0?[1-9]|[12][0-9]|3[01])([\/.])(0?[1-9]|1[0-2])\2(\d{4})\b/;
+      const dateRegex = /\b(0?[1-9]|[12][0-9]|3[01])([\/.])(0?[1-9]|1[0-2])\2(\d{2}|\d{4})\b/;
 
       const dateMatch = extractedText.match(dateRegex);
       const date = dateMatch ? dateMatch[0] : "Date not found";
