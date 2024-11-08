@@ -41,4 +41,4 @@ Vercel.com
 
 ---------------------------------------------------------------------------
 Side Notes on functionality:
-Vat is to be calculated as a seperate field. how much VAT was put on to the total?cs
+Vat is to be calculated as a seperate field. how much VAT was put on to the total?
