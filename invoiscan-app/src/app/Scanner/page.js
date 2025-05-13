@@ -165,7 +165,7 @@ export default function Scanner() {
   
     try {
       const processedImage = await preprocessImage(imageData);
-      const response = await fetch("/api/ocrScanner", {
+      const response = await fetch("../api/ocrScanner", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ image: processedImage }),

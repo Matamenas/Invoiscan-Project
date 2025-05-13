@@ -85,7 +85,7 @@ export default function Scanner() {
     setLoading(true);
 
     try {
-      const response = await fetch('/api/DemoOCR', {
+      const response = await fetch('../api/DemoOCR', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ image: imageData }),
