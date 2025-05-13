@@ -42,3 +42,22 @@ Vercel.com
 ---------------------------------------------------------------------------
 Side Notes on functionality:
 Vat is to be calculated as a seperate field. how much VAT was put on to the total?
+
+Fields to make:
+
+nr, provider, what you bought, paid by, reference no., date of purchase, NET (no vat), vat 23% or 21%, Grand total
+
+
+Exhibition:
+
+What is it used for?
+
+what do you do with the csv?
+
+Is it reliable?
+Do Tests 50 receipts or so!
+
+What API was it?
+
+How much of this you had to code yourself?
+
