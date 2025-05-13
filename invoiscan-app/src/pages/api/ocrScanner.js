@@ -1,5 +1,16 @@
-
+// pages/api/ocr.js
+import { Category } from '@mui/icons-material';
 import Tesseract from 'tesseract.js';
+
+// to allow larger images to uploaded we need this here
+export const config = {
+  api: {
+    bodyParser: {
+      // we can adjust this to limit the size
+      sizeLimit: '10mb',
+    },
+  },
+};
 
 export default async function handler(req, res) {
   if (req.method === 'POST') {
@@ -14,12 +25,12 @@ export default async function handler(req, res) {
       });
 
       // Extract information using regex
-      const totalMatch = text.match(/total[\s\S]*?(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)/i);
-      const vatMatch = text.match(/vat[\s\S]*?(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)/i);
+      const totalMatch = text.match(/(?:total|subtotal)[^\d\S]*((?:[\£\$\€]\d{1,5}(?:,\d{3})*(?:\.\d{2})?)|(?:\d{1,5}(?:,\d{3})*\.\d{2}))/i);
+      const vatMatch = text.match(/(?:vat|tax)[\s\S]*?(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)/i);
 
       // Date pattern for DD/MM/YYYY or DD.MM.YYYY formats
       const dateMatch = text.match(/\b(0?[1-9]|[12][0-9]|3[01])([\/.])(0?[1-9]|1[0-2])\2(\d{2}|\d{4})\b/);
-      const vatRegMatch = text.match(/\b[A-Z]{2}\d{7}[A-Z]?\b/i); // Sample pattern for VAT registration numbers
+      const vatRegMatch = text.match(/\b[A-Z]{2}\d{7}[A-Z]?\b/i);
 
       // Assume store name is the first line
       const lines = text.split("\n").filter(line => line.trim() !== "");
