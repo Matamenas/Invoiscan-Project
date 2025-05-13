@@ -1,5 +1,4 @@
 // pages/api/ocr.js
-import { Category } from '@mui/icons-material';
 import Tesseract from 'tesseract.js';
 
 // to allow larger images to uploaded we need this here
@@ -13,6 +12,7 @@ export const config = {
 };
 
 export default async function handler(req, res) {
+  console.log("/api/ocrScanner called with method:", req.method);
   if (req.method === 'POST') {
     const { image } = req.body;
 
@@ -49,6 +49,8 @@ export default async function handler(req, res) {
       res.status(500).json({ error: "OCR processing failed" });
     }
   } else {
+    console.warn("⛔️  Wrong method:", req.method);
+    res.setHeader("Allow", ["POST"]);
     res.status(405).json({ message: "Method Not Allowed" });
   }
 }
