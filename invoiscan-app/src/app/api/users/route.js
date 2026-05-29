@@ -1,6 +1,8 @@
 import { MongoClient, ObjectId } from "mongodb";
 
-const url = 'mongodb+srv://root:t2Csv2wtnama@cluster0.oeiff.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
+const dbusername = encodeURIComponent("matasbagdonas02_db_user");
+const dbpassword = encodeURIComponent("PbOLRWD2Hp7LWKwn");
+const url = `mongodb+srv://${dbusername}:${dbpassword}@invoiscan.nrin0wd.mongodb.net/?appName=Invoiscan`
 
 export async function GET() {
     const client = new MongoClient(url);
@@ -11,7 +13,9 @@ export async function GET() {
         const customerCollection = await db.collection("customer").find().toArray();
         const managerCollection = await db.collection("manager").find().toArray();
 
-        const users = [...customerCollection, ...managerCollection];
+        const customers = customerCollection.map(user => ({ ...user, accType: 'Customer' }));
+        const managers = managerCollection.map(user => ({ ...user, accType: 'Manager' }));
+        const users = [...customers, ...managers];
 
         return new Response(JSON.stringify(users), { status: 200 });
     } catch (error) {

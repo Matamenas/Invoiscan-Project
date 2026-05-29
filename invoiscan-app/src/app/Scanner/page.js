@@ -2,10 +2,37 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Box, Button, Typography, AppBar, Toolbar, IconButton, Dialog, DialogTitle, DialogActions, DialogContent, DialogContentText, TextField } from '@mui/material';
+import {
+  Box,
+  Button,
+  Typography,
+  AppBar,
+  Toolbar,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  TextField,
+  Drawer,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Divider,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+} from '@mui/material';
+import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import MenuIcon from '@mui/icons-material/Menu';
-import {Select, MenuItem, InputLabel, FormControl} from "@mui/material";
-import { Category } from '@mui/icons-material';
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import CameraAltIcon from '@mui/icons-material/CameraAlt';
+import LogoutIcon from '@mui/icons-material/Logout';
+import { DataGrid } from '@mui/x-data-grid';
 
 export default function Scanner() {
   const [video, setVideo] = useState(null);
@@ -13,6 +40,7 @@ export default function Scanner() {
   const [photo, setPhoto] = useState(null);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = React.useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const categories = [
     "Groceries",
     "Utilities",
@@ -41,6 +69,9 @@ export default function Scanner() {
   const [vatSum, setVatSum] = useState(0);
 
   const [editingIndex, setEditingIndex] = useState(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [previewImage, setPreviewImage] = useState('');
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [editableData, setEditableData] = useState({
     receiptImage: '',
   });
@@ -48,6 +79,10 @@ export default function Scanner() {
   const [hoveredIndex, setHoveredIndex] = useState(null);
 
   const [session, setSession] = useState(null)
+  const isManager = session?.accType === 'Manager';
+  const documentGridTemplate = isManager
+    ? '0.5fr 2fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr'
+    : '0.5fr 2fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr';
 
   // check for who is logged
    useEffect(() => {
@@ -213,13 +248,25 @@ export default function Scanner() {
     window.location.href = "/Login"
   }
 
+  const handleLogout = async () => {
+    try {
+      await fetch('../api/sessionHandling', { method: 'DELETE' });
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+    window.location.href = '/Login';
+  }
+
+  const toggleDrawer = (openState) => {
+    setDrawerOpen(openState);
+  }
+
   function runShowDocuments(){
     setShowDocuments(true);
     setShowScanner(false);
   }
 
   function runShowScanner(){
-    window.location.reload();
     setShowDocuments(false);
     setShowScanner(true);
   }
@@ -233,7 +280,7 @@ export default function Scanner() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({username: session.user, storeName: ocrData.storeName, vatReg: ocrData.vatReg, date: ocrData.date, vat: ocrData.vat, total: ocrData.total, category: ocrData.category, receiptImage: editableData.receiptImage}), 
+        body: JSON.stringify({username: session?.email, storeName: ocrData.storeName, vatReg: ocrData.vatReg, date: ocrData.date, vat: ocrData.vat, total: ocrData.total, category: ocrData.category, receiptImage: editableData.receiptImage}), 
       });
   
       if (!response.ok) {
@@ -255,12 +302,17 @@ export default function Scanner() {
     fetch('../api/ocrDataRetrieval')
       .then((res) => res.json())
       .then((data) => {
-        setData(data);
+        const documentArray = Array.isArray(data) ? data : [];
+        setData(documentArray);
 
-        const totalSum = data.reduce((acc, item) => acc + (parseFloat(item.total) || 0), 0);
-        const vatSum = data.reduce((acc, item) => acc + (parseFloat(item.vat) || 0), 0);
+        const totalSum = documentArray.reduce((acc, item) => acc + (parseFloat(item.total) || 0), 0);
+        const vatSum = documentArray.reduce((acc, item) => acc + (parseFloat(item.vat) || 0), 0);
         setTotalSum(totalSum);
         setVatSum(vatSum);
+      })
+      .catch((error) => {
+        console.error('Error fetching documents:', error);
+        setData([]);
       });
     }, []);
 
@@ -277,7 +329,7 @@ export default function Scanner() {
       }
     
       try {
-        const response = await fetch(`../api/updateDocument`, {
+        const response = await fetch(`/api/updateDocument`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(editableData),
@@ -291,10 +343,31 @@ export default function Scanner() {
         setData(updatedData);
     
         setEditingIndex(null);
-        setEditableData({});
+        setEditDialogOpen(false);
+        setEditableData({ receiptImage: '' });
       } catch (error) {
         console.error("Error saving data:", error);
         alert("Failed to save data.");
+      }
+    };
+
+    const handleUpdateStatus = async (id, status) => {
+      try {
+        const response = await fetch(`../api/updateDocument`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ _id: id, status }),
+        });
+
+        if (!response.ok) throw new Error('Failed to update status');
+
+        const updatedData = data.map((item) =>
+          item._id === id ? { ...item, status } : item
+        );
+        setData(updatedData);
+      } catch (error) {
+        console.error('Error updating status:', error);
+        alert('Failed to update document status.');
       }
     };
 
@@ -319,18 +392,21 @@ export default function Scanner() {
       }
     };
     
-    
+
+
+    // This Function is used to export everything gathered so far to a CSV
     const exportToCSV = () => {
       if (!data || data.length === 0) {
         alert("No data to export.");
         return;
       }
       
-      const headers = ["No.", "Provider", "Category", "Document No.", "Date", "VAT", "Total",];
+      const headers = ["No.", "Provider", "Category", "Status", "Document No.", "Date", "VAT", "Total"];
       const rows = data.map((item, index) => [
         index + 1,
         item.storeName,
         item.category,
+        item.status || 'pending',
         item.vatReg,
         item.date,
         parseFloat(item.vat).toFixed(2),
@@ -338,6 +414,7 @@ export default function Scanner() {
       ]);
       
       const summaryRow = [
+        '',
         '',
         '',
         '',
@@ -360,7 +437,127 @@ export default function Scanner() {
       link.click();
       document.body.removeChild(link);
     };
+    /////////////////////////// CSV END ///////////////////////////
     
+
+    // This function is used to check the status of the document and return the appropriate color and image for the status
+    const checkDocumentStatus = (status) => {
+      if (status === 'approved') return { color: 'green', img: '/images/approved.png' };
+      if (status === 'declined') return { color: 'red', img: '/images/declined.png' };
+      if (status === 'pending') return { color: 'orange', img: '/images/pending.png' };
+  };
+
+
+    /////////////////////////////////////////// DATA GRID SETUP START /////////////////////////////////////////////
+    const scannerRows = data.map((item, index) => ({
+      id: item._id || `doc-${index}`,
+      ...item,
+    }));
+
+    const findDocumentIndex = (rowId) => data.findIndex((item) => (item._id || item.id) === rowId);
+
+    const handleEditById = (rowId) => {
+      const index = findDocumentIndex(rowId);
+      if (index >= 0) {
+        setEditingIndex(index);
+        setEditableData({ ...data[index] });
+        setEditDialogOpen(true);
+      }
+    };
+
+    const handleDeleteById = (rowId) => {
+      const index = findDocumentIndex(rowId);
+      if (index >= 0) handleDelete(index);
+    };
+
+    const scannerColumns = [
+      {
+        field: 'storeName',
+        headerName: 'Provider',
+        flex: 1.1,
+        minWidth: 160,
+        renderCell: (params) => (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+            <Typography variant="body2">{params.value}</Typography>
+            {params.row.receiptImage && (
+              <IconButton
+                size="small"
+                variant="outlined"
+                onClick={() => {
+                  setPreviewImage(params.row.receiptImage);
+                  setPreviewOpen(true);
+                }}
+              >
+                <ReceiptLongIcon/>
+              </IconButton>
+            )}
+          </Box>
+        ),
+      },
+      { field: 'category', headerName: 'Category', flex: 0.8, minWidth: 120 },
+      {
+        field: 'status',
+        headerName: 'Status',
+        flex: 0.8,
+        minWidth: 110,
+        renderCell: (params) => {
+          const statusInfo = checkDocumentStatus(params.value || 'pending');
+          return (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              {statusInfo?.img && <img src={statusInfo.img} alt={params.value || 'pending'} style={{ margin: '8px 8px 8px 0' }} />}
+              <Typography variant="body2" sx={{ textTransform: 'capitalize' }}>{params.value || 'pending'}</Typography>
+            </Box>
+          );
+        },
+      },
+      { field: 'vatReg', headerName: 'VAT Reg', flex: 0.9, minWidth: 120 },
+      { field: 'date', headerName: 'Date', flex: 0.8, minWidth: 110 },
+      {
+        field: 'vat',
+        headerName: 'VAT',
+        flex: 0.7,
+        minWidth: 90,
+        type: 'number',
+        valueFormatter: (value) => {
+          const amount = parseFloat(value ?? 0);
+          return `€${amount.toFixed(2)}`;
+        },
+      },
+      {
+        field: 'total',
+        headerName: 'Total',
+        flex: 0.8,
+        minWidth: 100,
+        type: 'number',
+        valueFormatter: (value) => {
+          const amount = parseFloat(value ?? 0);
+          return `€${amount.toFixed(2)}`;
+        },
+      },
+      {
+        field: 'actions',
+        headerName: 'Actions',
+        sortable: false,
+        flex: 1,
+        minWidth: 240,
+        renderCell: (params) => (
+          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+            {isManager ? (
+              <>
+                <Button size="small" variant="contained" color="success" onClick={() => handleUpdateStatus(params.row._id, 'approved')}>Approve</Button>
+                <Button size="small" variant="contained" color="error" onClick={() => handleUpdateStatus(params.row._id, 'declined')}>Decline</Button>
+              </>
+            ) : (
+              <>
+                <Button size="small" variant="outlined" color="primary" onClick={() => handleEditById(params.id)}>Edit</Button>
+                <Button size="small" variant="outlined" color="error" onClick={() => handleDeleteById(params.id)}>Delete</Button>
+              </>
+            )}
+          </Box>
+        ),
+      },
+    ];
+    ////////////////////////////////////////////////////////// DataGrid END ///////////////////////////////////////////////
 
 
   return (
@@ -375,6 +572,9 @@ export default function Scanner() {
         transition: 'transform 0.3s ease-in-out',
       }}>
         <Toolbar>
+          <IconButton edge="start" color="inherit" aria-label="menu" onClick={() => toggleDrawer(true)} sx={{ mr: 2 }}>
+            <MenuIcon />
+          </IconButton>
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             <a href="/" style={{ textDecoration: 'none' }}>
             <img
@@ -392,14 +592,52 @@ export default function Scanner() {
             />
           </a>
           </Typography>
-
-          <Button variant="outlined" sx={{ color: '#507b41', borderColor: 'white', borderRadius: '5px', fontSize: '1.3rem'}} onClick={runShowDocuments}>Documents</Button>
-          <Button variant="outlined" sx={{ color: '#507b41', borderColor: 'white', borderRadius: '5px', fontSize: '1.3rem'}} onClick={runShowScanner}> Scan A Document </Button>
-          <Button variant="outlined" sx={{ color: '#507b41', borderColor: 'white', borderRadius: '5px', fontSize: '1.3rem'}} onClick={redirectToHome} color='white'> Home </Button>
-          <Button variant="outlined" sx={{ color: '#507b41', borderColor: 'white', borderRadius: '5px', fontSize: '1.3rem'}} onClick={redirectToLogin} color='white'>Profile</Button>
+          <Typography sx={{ ml: 3, mr: 1, color: '#507b41' }}>
+            Hello {session?.email ? session.email.split('@')[0] : 'User'}
+          </Typography>
+          <Button variant="contained" color="error" onClick={handleLogout} startIcon={<LogoutIcon />} sx={{ ml: 1 }}>Logout</Button>
         </Toolbar>
       </AppBar>
 
+      <Drawer anchor="left" open={drawerOpen} onClose={() => toggleDrawer(false)}>
+        <Box sx={{ width: 260 }} role="presentation" onClick={() => toggleDrawer(false)} onKeyDown={() => toggleDrawer(false)}>
+          <Typography variant="h6" sx={{ m: 2 }}>Navigation</Typography>
+          <Divider />
+          <List>
+            {session?.accType === 'Manager' ? (
+              <ListItem disablePadding>
+                <ListItemButton onClick={() => window.location.href = '/Accountant'}>
+                  <ListItemIcon>
+                    <AddCircleOutlineIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="Manage Accounts" />
+                </ListItemButton>
+              </ListItem>
+            ) : (
+              <>
+                <ListItem disablePadding>
+                  <ListItemButton onClick={runShowScanner}>
+                    <ListItemIcon>
+                      <CameraAltIcon />
+                    </ListItemIcon>
+                    <ListItemText primary="Scan Document" />
+                  </ListItemButton>
+                </ListItem>
+                <ListItem disablePadding>
+                  <ListItemButton onClick={runShowDocuments}>
+                    <ListItemIcon>
+                      <AddCircleOutlineIcon />
+                    </ListItemIcon>
+                    <ListItemText primary="Documents" />
+                  </ListItemButton>
+                </ListItem>
+              </>
+            )}
+          </List>
+        </Box>
+      </Drawer>
+
+      {/* Scanner Page Box */ }
       {showScanner &&
           <Box sx={{ p: 2 }}>
             <Typography variant="h4" align="center">Capture or Upload an Image</Typography>
@@ -502,7 +740,6 @@ export default function Scanner() {
               <Button type="submit" onClick={handleSubmit}>Confirm</Button>
             </DialogActions>
           </Dialog>
-          <br></br>
           <Button onClick={handleFormOpen} variant="contained" color="primary" style={{backgroundColor: "Green"}}>Open Form Validation</Button>
           <br></br>
           Extracted Text:
@@ -514,117 +751,49 @@ export default function Scanner() {
         </Box>
       }
 
+      {/* Documents Page Box */ }
       {showDocuments &&
       <Box component="section" sx={{ p: 2 }}>
         <Typography variant="h6" sx={{ textAlign: "center", mb: 2 }}>
           Documents
         </Typography>
 
-        {/* Table Header */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: '0.5fr 2fr 1fr 1fr 1fr 1fr 1fr 1fr',
-          fontWeight: 'bold',
-          padding: '10px',
-          borderBottom: '2px solid black',
-          backgroundColor: '#f4f4f4'
-          }}>
-          <div>no.</div>
-          <div>Provider</div>
-          <div>Category</div>
-          <div>VAT Reg</div>
-          <div>Date</div>
-          <div style={{ textAlign: "right" }}>VAT</div>
-          <div style={{ textAlign: "right" }}>Total</div>
-          <div style={{textAlign: "right"}}>Editing</div>
-        </div>
+        <Box sx={{ height: 460, width: '100%' }}>
+          <DataGrid
+            rows={scannerRows}
+            columns={scannerColumns}
+            pageSizeOptions={[5, 10]}
+            initialState={{ pagination: { paginationModel: { pageSize: 5 } } }}
+            disableRowSelectionOnClick
+            sx={{ bgcolor: 'background.paper', borderRadius: 2 }}
+          />
+        </Box>
 
-        {/* Table Body */}
-        {data.map((item, i) => (
-        <div key={i} style={{
-        display: 'grid',
-        gridTemplateColumns: '0.5fr 2fr 1fr 1fr 1fr 1fr 1fr 1fr',
-        padding: '10px',
-        borderBottom: '1px solid #ddd',
-      }}>
+        <Dialog open={previewOpen} onClose={() => setPreviewOpen(false)} maxWidth="md" fullWidth>
+          <DialogTitle>Receipt Image</DialogTitle>
+          <DialogContent sx={{ display: 'flex', justifyContent: 'center' }}>
+            {previewImage ? <Box component="img" src={previewImage} alt="Receipt preview" sx={{ maxWidth: '100%', maxHeight: 600, objectFit: 'contain' }} /> : null}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setPreviewOpen(false)}>Close</Button>
+          </DialogActions>
+        </Dialog>
 
-        <div>{i + 1}</div>
-
-        {editingIndex === i ? (
-          <>
-        <TextField
-          value={editableData.storeName}
-          onChange={(e) => setEditableData({ ...editableData, storeName: e.target.value })}
-        />
-        <select
-          value={editableData.category}
-          onChange={(e) => setEditableData({ ...editableData, category: e.target.value })}
-          style={{ padding: "6px", borderRadius: "4px" }}
-        >
-          {categories.map((cat) => (
-            <option key={cat} value={cat}>{cat}</option>
-          ))}
-        </select>
-        <TextField
-          value={editableData.vatReg}
-          onChange={(e) => setEditableData({ ...editableData, vatReg: e.target.value })}
-        />
-        <TextField
-          value={editableData.date}
-          onChange={(e) => setEditableData({ ...editableData, date: e.target.value })}
-        />
-        <TextField
-          value={editableData.vat}
-          onChange={(e) => setEditableData({ ...editableData, vat: e.target.value })}
-        />
-        <TextField
-          value={editableData.total}
-          onChange={(e) => setEditableData({ ...editableData, total: e.target.value })}
-        />
-      </>
-    ) : (
-      <>
-        <div
-        onMouseEnter={() => setHoveredIndex(i)}
-        onMouseLeave={() => setHoveredIndex(null)}
-        style={{ position: "relative" }}>
-          {item.storeName}
-          {hoveredIndex === i && item.receiptImage && (
-          <img
-            src={item.receiptImage}
-            alt='Receipt/Invoice'
-            style={{
-              position: 'absolute',
-              top: '100%',
-              left: 0,
-              width: 200,
-              border: '1px solid black',
-              backgroundColor: '#fff',
-              zIndex: 10,
-              boxShadow: '0 0 5px rgba(0,0,0,0.3)'
-            }}
-            />
-        )}
-        </div>
-        <div>{item.category}</div>
-        <div>{item.vatReg}</div>
-        <div>{item.date}</div>
-        <div style={{ textAlign: "right" }}>{parseFloat(item.vat).toFixed(2)}</div>
-        <div style={{ textAlign: "right" }}>{parseFloat(item.total).toFixed(2)}</div>
-      </>
-    )}
-
-    {/* Edit and Delete buttons */}
-    <div style={{ textAlign: "center" }}>
-      {editingIndex === i ? (
-        <Button onClick={handleSaveEdit} variant="contained" color="primary">Save</Button>
-      ) : (
-        <Button onClick={() => handleEdit(i)} variant="outlined" color="primary">Edit</Button>
-      )}
-      <Button onClick={() => handleDelete(i)} variant="outlined" color="error">Delete</Button>
-    </div>
-  </div>
-))}
+        <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)} fullWidth maxWidth="sm">
+          <DialogTitle>Edit Document</DialogTitle>
+          <DialogContent sx={{ display: 'grid', gap: 1.5, pt: 1 }}>
+            <TextField label="Provider" value={editableData.storeName || ''} onChange={(e) => setEditableData({ ...editableData, storeName: e.target.value })} />
+            <TextField label="Category" value={editableData.category || ''} onChange={(e) => setEditableData({ ...editableData, category: e.target.value })} />
+            <TextField label="VAT Reg" value={editableData.vatReg || ''} onChange={(e) => setEditableData({ ...editableData, vatReg: e.target.value })} />
+            <TextField label="Date" value={editableData.date || ''} onChange={(e) => setEditableData({ ...editableData, date: e.target.value })} />
+            <TextField label="VAT" value={editableData.vat || ''} onChange={(e) => setEditableData({ ...editableData, vat: e.target.value })} />
+            <TextField label="Total" value={editableData.total || ''} onChange={(e) => setEditableData({ ...editableData, total: e.target.value })} />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setEditDialogOpen(false)}>Cancel</Button>
+            <Button variant="contained" onClick={handleSaveEdit}>Save</Button>
+          </DialogActions>
+        </Dialog>
 
         {/* Grand Total & VAT Sum */}
         <div style={{

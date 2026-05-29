@@ -19,8 +19,9 @@ export async function POST(request) {
 
   // <-------------------------------------->
   //             Database call
-
-  const url = 'mongodb+srv://root:t2Csv2wtnama@cluster0.oeiff.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
+  const dbusername = encodeURIComponent("matasbagdonas02_db_user");
+  const dbpassword = encodeURIComponent("PbOLRWD2Hp7LWKwn");
+  const url = `mongodb+srv://${dbusername}:${dbpassword}@invoiscan.nrin0wd.mongodb.net/?appName=Invoiscan`
   const client = new MongoClient(url);
   const dbName = 'app'; // DB NAME
 
@@ -39,7 +40,8 @@ export async function POST(request) {
       vat,
       total,
       category,
-      receiptImage
+      receiptImage,
+      status: 'pending',
     };
 
     await collection.insertOne(myobj);

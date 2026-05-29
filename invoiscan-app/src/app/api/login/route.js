@@ -79,6 +79,8 @@ export default function Login({ onSuccess }) {
 
                 //This is where we call our 'onSuccess' function passed as a prop to notify the parent component of a successful login.
                 onSuccess();
+                const destination = accountType === 'Manager' ? '/Accountant' : '/Scanner';
+                window.location.href = destination;
             }
             else {
                 /*

@@ -14,7 +14,9 @@ export async function GET(req, res) {
 
     // =================================================
     const { MongoClient } = require('mongodb');
-    const url = 'mongodb+srv://root:t2Csv2wtnama@cluster0.oeiff.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
+    const dbusername = encodeURIComponent("matasbagdonas02_db_user");
+    const dbpassword = encodeURIComponent("PbOLRWD2Hp7LWKwn");
+    const url = `mongodb+srv://${dbusername}:${dbpassword}@invoiscan.nrin0wd.mongodb.net/?appName=Invoiscan`
     const client = new MongoClient(url);
     const dbName = 'app';
     console.log('Connected successfully to server');

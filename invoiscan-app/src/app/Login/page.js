@@ -10,18 +10,12 @@ import MenuIcon from '@mui/icons-material/Menu';
 import { useState, useEffect } from 'react';
 import Register from '../api/register/route';
 import Login from "../api/login/route";
-import Dashboard from "../api/dashboard/route";
 
 
 export default function MyApp() {
   //const [data, setData] = useState(null);
-  const [showLogin, setShowLogin] = useState(true);
-  const [showDash, setShowDash] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [showDocumentOverview, setDocumentOverview] = useState(false);
-  const [showScanner, setScanner] = useState(false);
-  const [showAdmin, setShowAdmin] = useState(false);
 
   useEffect(() => {
     const fetchSession = async () => {
@@ -29,6 +23,11 @@ export default function MyApp() {
       if (response.ok) {
         const session = await response.json();
         setIsLoggedIn(true);
+        if (session?.accType === 'Manager') {
+          window.location.href = '/Accountant';
+        } else {
+          window.location.href = '/Scanner';
+        }
       } else {
         setIsLoggedIn(false);
       }
@@ -36,47 +35,8 @@ export default function MyApp() {
     fetchSession();
   }, []);
 
- // if (!data) return <p>Loading...</p>;
-
-  //Toggle functions for the different views
-  function runShowRegister() {
-    setShowLogin(false);
-    setShowDash(false);
-    setShowRegister(true);
-    setShowAdmin(false);
-  }
-
-  function runShowLogin() {
-    setShowLogin(true);
-    setShowDash(false);
-    setShowRegister(false);
-    setShowAdmin(false);
-  }
-
-  //Handling login success
-  const handleLoginSuccess = () => {
-    //Set login state to true
-    setIsLoggedIn(true);
-    //Hide the login page
-    setShowLogin(false);
-    //Show the dashboard after successful login
-    setShowDash(true);
-    setShowAdmin(false);
-  };
-
-  // Handle Register success
   const handleRegisterSuccess = () => {
-    //Set login state to true
-    setIsLoggedIn(true);
-    //Hide the registration page
-    setShowRegister(false);
-    //Show the dashboard after registration
-    setShowDash(true);
-  };
-
-  //Handling Dashboard Redirecting
-  const handleDashboardSuccess = () => {
-    setShowDash(false);
+    window.location.href = '/Scanner';
   };
 
   const redirectToHome = () => {
@@ -146,37 +106,26 @@ export default function MyApp() {
 
             {isLoggedIn ? (
                 <>
-                  <Button variant="outlined" sx={{ color: '#507b41', borderColor: 'white', borderRadius: '5px', fontSize: '1.3rem'}} onClick={handleLoginSuccess}>Document Overview</Button>
-                  {/* I updated it to call handleLogout */}
-                  <Button variant="outlined" sx={{ color: 'red', borderColor: 'white', borderRadius: '5px', fontSize: '1.3rem'}} onClick={handleLogout}>Logout</Button>
+                  <Typography variant="body1" sx={{ color: '#507b41' }}>Redirecting...</Typography>
                 </>
             ) : (
                 <>
                   <Button style={{textAlign: "left"}} variant="outlined" sx={{ color: '#507b41', borderColor: 'white', borderRadius: '5px', fontSize: '1.3rem'}} onClick={redirectToHome}>Home</Button>
-                  <Button variant="outlined" sx={{ color: '#507b41', borderColor: 'white', borderRadius: '5px', fontSize: '1.3rem'}} onClick={runShowLogin}>Login</Button>
-                  <Button variant="outlined" sx={{ color: '#507b41', borderColor: 'white', borderRadius: '5px', fontSize: '1.3rem'}} onClick={runShowRegister}>Register</Button>
+                  <Button variant="outlined" sx={{ color: '#507b41', borderColor: 'white', borderRadius: '5px', fontSize: '1.3rem'}} onClick={() => setShowRegister(false)}>Login</Button>
+                  <Button variant="outlined" sx={{ color: '#507b41', borderColor: 'white', borderRadius: '5px', fontSize: '1.3rem'}} onClick={() => setShowRegister(true)}>Register</Button>
                 </>
             )}
           </Toolbar>
         </AppBar>
 
         {/* Once called, each of these functions will render in the appropriate components */}
-        {showRegister && (
-            <Box component="section" sx={{p: 2, border: '1px dashed grey'}}>
-              <Register onSuccess={handleRegisterSuccess}/>
-            </Box>
-        )}
-        {showLogin && (
-            <Box component="section" sx={{p: 2, border: '1px dashed grey'}}>
-              <Login onSuccess={handleLoginSuccess}/>
-            </Box>
-        )}
-        {/* Only if the user is logged will the dashboard be set to true */}
-        {showDash && isLoggedIn && (
-            <Box component="section" sx={{p: 2, border: '1px dashed grey'}}>
-              <Dashboard showProducts={handleDashboardSuccess}/>
-            </Box>
-        )}
+        <Box component="section" sx={{p: 2, border: '1px dashed grey'}}>
+          {showRegister ? (
+            <Register onSuccess={handleRegisterSuccess} />
+          ) : (
+            <Login onSuccess={() => {}} />
+          )}
+        </Box>
       </Box>
   );
 }

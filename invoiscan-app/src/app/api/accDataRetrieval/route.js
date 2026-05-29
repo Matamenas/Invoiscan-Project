@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
-import { getCustomSession } from "@/app/api/sessions/sessionCode";
 import { MongoClient } from "mongodb";
 
-export async function GET() {
-  console.log("In the getOcrDataRetrieval API route");
+export async function GET(request) {
+  console.log("In the AccountantDataRetrieval API route");
 
   try {
     const dbusername = encodeURIComponent("matasbagdonas02_db_user");
@@ -12,16 +11,19 @@ export async function GET() {
     const client = new MongoClient(url);
     await client.connect();
 
-    const session = await getCustomSession();
-    const username = session.user.email;
+    const urlObj = new URL(request.url);
+    const username = urlObj.searchParams.get('username');
     console.log("The current user is:", username);
 
-    
+    if (!username) {
+      return NextResponse.json({ error: 'username query parameter is required' }, { status: 400 });
+    }
+
     console.log("Connected successfully to MongoDB");
 
     const db = client.db('app');
     const collection = db.collection('Documents');
-    const findResult = await collection.find({ username: username }).toArray();
+    const findResult = await collection.find({ username }).toArray();
 
     console.log("Found documents: ", findResult);
 
