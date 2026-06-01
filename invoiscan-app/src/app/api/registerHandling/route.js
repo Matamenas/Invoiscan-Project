@@ -1,5 +1,7 @@
 
 import {getCustomSession} from "@/app/api/sessions/sessionCode";
+import bcrypt from 'bcrypt';
+
 export async function GET(req, res) {
     //Making a note that we are in the Register Handling API page using a console LOG
     console.log("in the api registerHandling page")
@@ -47,8 +49,11 @@ export async function GET(req, res) {
             );
         }
 
+        //Hash the password before storing
+        const hashedPassword = await bcrypt.hash(pass, 10);
+
         //Inserting the new account
-        const result = await collection.insertOne({ username: email, pass: pass, accType: accType, createdAt: new Date()});
+        const result = await collection.insertOne({ username: email, pass: hashedPassword, accType: accType, createdAt: new Date()});
         console.log(`New account created in ${determineCollection} collection:`, result);
 
         //SESSION CREATION

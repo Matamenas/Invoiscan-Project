@@ -26,7 +26,7 @@ export default function Register({ onSuccess }) {
         console.log("Account Type: " + accountType);
 
         runDBCallAsync(
-            `http://localhost:3000/api/registerHandling?email=${email}&pass=${pass}&accType=${accountType}`
+            `/api/registerHandling?email=${email}&pass=${pass}&accType=${accountType}`
         );
         console.log(`Registering with account type: ${accountType}`);
     };

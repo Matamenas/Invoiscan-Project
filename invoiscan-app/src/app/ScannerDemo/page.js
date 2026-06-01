@@ -2,6 +2,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Tesseract from 'tesseract.js';
 import { Box, Button, Typography, AppBar, Toolbar, IconButton, Dialog, DialogTitle, DialogActions, DialogContent, DialogContentText, TextField } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 
@@ -85,34 +86,32 @@ export default function Scanner() {
     setLoading(true);
 
     try {
-      const response = await fetch('../pages/api/DemoOCR', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: imageData }),
+      const { data: { text } } = await Tesseract.recognize(imageData, 'eng', {
+        logger: (m) => console.log(m),
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-
-      const data = await response.json();
+      const totalMatch = text.match(/(?:total|subtotal)[^\d\S]*((?:[\£\$\€]\d{1,5}(?:,\d{3})*(?:\.\d{2})?)|(?:\d{1,5}(?:,\d{3})*\.\d{2}))/i);
+      const vatMatch = text.match(/(?:vat|tax)[\s\S]*?(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)/i);
+      const dateMatch = text.match(/\b(0?[1-9]|[12][0-9]|3[01])([\/.])(0?[1-9]|1[0-2])\2(\d{2}|\d{4})\b/);
+      const vatRegMatch = text.match(/\b[A-Z]{2}\d{7}[A-Z]?\b/i);
+      const lines = text.split("\n").filter(line => line.trim() !== "");
+      const storeName = lines.length > 0 ? lines[0].trim() : 'Store name not found';
 
       setOcrData({
-        storeName: data.storeName || 'Not found',
-        total: data.total || 'Not found',
-        vat: data.vat || 'Not found',
-        date: data.date || 'Not found',
-        vatReg: data.vatReg || 'Not found',
-        fullText: data.fullText || 'Not found'
+        storeName,
+        total: totalMatch ? totalMatch[1] : 'Total not found',
+        vat: vatMatch ? vatMatch[1] : 'VAT not found',
+        date: dateMatch ? dateMatch[0] : 'Date not found',
+        vatReg: vatRegMatch ? vatRegMatch[0] : 'VAT Registration not found',
+        fullText: text,
       });
-      setOpen(true); 
-      // open dialog after OCR processing
+      setOpen(true);
     } catch (error) {
       console.error('Error:', error);
       alert(`Failed to process image: ${error.message}`);
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   // now we must add the fun stuff

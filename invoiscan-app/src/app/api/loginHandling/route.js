@@ -1,4 +1,5 @@
 import { getCustomSession } from "@/app/api/sessions/sessionCode";
+import bcrypt from 'bcrypt';
 
 export async function GET(req, res) {
     console.log("In the API login page");
@@ -48,8 +49,9 @@ export async function GET(req, res) {
             );
         }
 
-        //Checking if the password matches
-        if (user.pass !== pass) {
+        //Checking if the password matches using bcrypt
+        const isPasswordValid = await bcrypt.compare(pass, user.pass);
+        if (!isPasswordValid) {
             //If the password doesn't match, return a failure message
             return new Response(
                 JSON.stringify({ success: false, message: "Incorrect password" }),
