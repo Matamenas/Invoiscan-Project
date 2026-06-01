@@ -73,7 +73,7 @@ export default function Register({ onSuccess }) {
                         }}>
                         Customer
                     </Button>
-                    <Button
+                    {/* <Button
                         variant={accountType === 'Manager' ? 'contained' : 'outlined'}
                         onClick={() => setAccountType('Manager')}
                         sx={{
@@ -85,7 +85,7 @@ export default function Register({ onSuccess }) {
                             }
                         }}>
                         Manager
-                    </Button>
+                    </Button> */}
                 </Box>
 
                 {/* Form Layout used. Keeping it simple */}
